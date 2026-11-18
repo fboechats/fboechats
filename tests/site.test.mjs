@@ -7,7 +7,7 @@ const html = file('public/index.html');
 
 test('publica a vitrine com os 15 produtos do snapshot', () => {
   assert.match(html, /<title>AM Med \|/);
-  assert.equal((html.match(/<article class="product-card"\b/g) ?? []).length, 15);
+  assert.equal((html.match(/<article class="product-card"(?:\s|>)/g) ?? []).length, 15);
 });
 
 test('preserva canonical, robots e sitemap do domínio oficial', () => {
