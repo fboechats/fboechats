@@ -277,10 +277,16 @@ let lastFocus=null;
 function show(){if(overlay.hidden)lastFocus=document.activeElement;overlay.hidden=false;document.body.classList.add('modal-open');close.focus();}
 function hide(){overlay.hidden=true;document.body.classList.remove('modal-open');if(lastFocus?.focus)lastFocus.focus();}
 const WHATSAPP_NUMBER='5579999672277';
-function quote(slug){
+// No personal messages or WhatsApp URLs are passed to analytics.
+// Tracking is inert until a consent-aware GA4 tag defines window.gtag.
+function track(name,params){
+ if(typeof window.gtag==='function')window.gtag('event',name,params);
+}
+function quote(slug,placement='general'){
  const p=PRODUCTS.find(x=>x.slug===slug);
  const message=p?`Olá! Tenho interesse em ${p.title} (${p.brand}), que vi no site da AM Med. Gostaria de solicitar um orçamento.`:'Olá! Vi o site da AM Med e gostaria de solicitar um orçamento de produtos.';
  const url='https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(message);
+ track('whatsapp_click',{product_id:p?.slug||'general',product_brand:p?.brand||'general',placement});
  if(!overlay.hidden)hide();
  window.open(url,'_blank','noopener,noreferrer');
 }
@@ -300,11 +306,13 @@ const EXTRA_TECH={
 function quoteCartucho(variant){
  const v=variant===137?'137 nanoagulhas':variant+' agulha'+(variant===1?'':'s');
  const message='Olá! Vi os cartuchos Smart GR para Derma Pen no site da AM Med. Gostaria de orçamento para a versão de '+v+' (linha preta SKCD).';
+ track('whatsapp_click',{product_id:'cartuchos-smart-gr',product_brand:'SMART GR',placement:'variant',variant:variant===137?'137_nanoagulhas':variant+'_agulhas'});
  if(!overlay.hidden)hide();
  window.open('https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
 }
 function details(slug){
  const p=PRODUCTS.find(x=>x.slug===slug);if(!p)return;
+ track('view_item',{items:[{item_id:p.slug,item_name:p.title,item_brand:p.brand,item_category:p.category}]});
  intro.textContent=p.brand+' · '+p.category;
  title.textContent=p.title;
  description.textContent=p.description;
@@ -353,9 +361,9 @@ function details(slug){
    if(p.slug==='smart-derma-pen-sp01'){const b=document.createElement('button');b.type='button';b.className='related-secondary';b.textContent='Ver cartuchos disponíveis ↗';b.onclick=()=>details('cartuchos-smart-gr');rel.append(b)}
  }else if(p.related?.length){rel.hidden=false;const h=document.createElement('h3');h.textContent='Veja também';rel.append(h);p.related.forEach(sl=>{const q=PRODUCTS.find(x=>x.slug===sl);if(!q)return;const b=document.createElement('button');b.className='related-secondary';b.type='button';b.textContent=q.title+' ↗';b.onclick=()=>details(sl);rel.append(b)})}
  feedback.textContent='';show();
- const action=document.getElementById('detail-quote-action');action.hidden=false;action.onclick=()=>quote(slug);
+ const action=document.getElementById('detail-quote-action');action.hidden=false;action.onclick=()=>quote(slug,'detail');
 }
-document.querySelectorAll('[data-quote]').forEach(b=>b.addEventListener('click',()=>quote(b.dataset.quote)));
+document.querySelectorAll('[data-quote]').forEach(b=>b.addEventListener('click',()=>quote(b.dataset.quote,'card')));
 document.querySelectorAll('[data-open-product]').forEach(b=>b.addEventListener('click',()=>details(b.dataset.openProduct)));
 document.querySelectorAll('[data-open-general]').forEach(b=>b.addEventListener('click',()=>quote(null)));
 close.addEventListener('click',hide);
